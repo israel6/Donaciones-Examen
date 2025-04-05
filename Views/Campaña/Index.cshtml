@@ -1,0 +1,54 @@
+﻿@model IEnumerable<Donaciones.Models.CampañaModels>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1 class="text-center">Campañas</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-outline-primary">Nuevo</a>
+</p>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+<script>
+    $(document).ready(() => {
+        // Cargar la lista de campañas
+        $.get("/Campaña/ListaCampañas", (listaCampañas) => { // URL corregida
+            let html = "";
+            $.each(listaCampañas, (index, campaña) => {
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${campaña.nombre}</td>
+                        <td>${campaña.objetivo}</td>
+                        <td>
+                            <a class="btn btn-outline-warning" href="/Campaña/Edit/${campaña.campanaId}">Editar</a> |
+                            <a class="btn btn-outline-info" href="/Campaña/Details/${campaña.campanaId}">Detalles</a> |
+                            <a class="btn btn-outline-danger" href="/Campaña/Delete/${campaña.campanaId}">Eliminar</a>
+                        </td>
+                    </tr>
+                `;
+            });
+            // Insertar las filas de campañas en la tabla
+            $("#tablaCampañas tbody").html(html);
+        }).fail(() => {
+            console.error("Error al cargar la lista de campañas.");
+        });
+    });
+</script>
+
+<table class="table table-responsive table-bordered table-striped" id="tablaCampañas">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Objetivo</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>

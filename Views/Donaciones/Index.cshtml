@@ -1,0 +1,82 @@
+﻿@model IEnumerable<Donaciones.Models.DonacionesModels>
+@{
+    ViewData["Title"] = "Donaciones";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<h1 class="text-center">Donaciones</h1>
+<p>
+    <a asp-action="Create" class="btn btn-outline-primary">Nuevo</a>
+</p>
+
+<!-- Tabla de Donaciones -->
+<table class="table table-responsive table-bordered table-striped" id="tablaDonaciones">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Fecha</th>
+            <th>Monto</th>
+            <th>Beneficiario</th>
+            <th>Campaña</th>
+            <th>Donante</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td colspan="7" class="text-center">Cargando datos...</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- Scripts -->
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script>
+    $(document).ready(function() {
+        cargarDonaciones();
+    });
+
+    function cargarDonaciones() {
+        $.ajax({
+            url: '@Url.Action("ListaDonaciones", "Donaciones")',
+            type: "GET",
+            dataType: "json",
+            success: function(data) {
+                console.log("Datos recibidos:", data);
+                let html = "";
+
+                if (data && data.length > 0) {
+                    $.each(data, function(index, donacion) {
+                        // Formatear la fecha
+                        let fecha = new Date(donacion.fecha);
+                        let fechaFormateada = fecha.toLocaleDateString();
+
+                        html += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${fechaFormateada}</td>
+                                <td>$${donacion.monto.toFixed(2)}</td>
+                                <td>${donacion.beneficiarioNombre}</td>
+                                <td>${donacion.campanaNombre}</td>
+                                <td>${donacion.donanteNombre}</td>
+                                <td>
+                                    <a class="btn btn-outline-warning" href="/Donaciones/Edit/${donacion.donacionId}">Editar</a> |
+                                    <a class="btn btn-outline-info" href="/Donaciones/Details/${donacion.donacionId}">Detalles</a> |
+                                    <a class="btn btn-outline-danger" href="/Donaciones/Delete/${donacion.donacionId}">Eliminar</a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    html = '<tr><td colspan="7" class="text-center">No hay donaciones disponibles</td></tr>';
+                }
+
+                $("#tablaDonaciones tbody").html(html);
+            },
+            error: function(xhr, status, error) {
+                console.error("Error al cargar la lista de donaciones:", status, error);
+                console.error("Respuesta del servidor:", xhr.responseText);
+                $("#tablaDonaciones tbody").html('<tr><td colspan="7" class="text-center text-danger">Error al cargar los datos. Revisa la consola para más detalles.</td></tr>');
+            }
+        });
+    }
+</script>
