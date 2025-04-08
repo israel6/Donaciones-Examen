@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Donaciones.Controllers
 {
-    [Authorize(Roles = "Administrador,Beneficiario")]
+    // Cambiar el nombre a BeneficiarioController (plural) para que coincida con las rutas en la vista
     public class BeneficiarioController : Controller
     {
         private readonly ApplicationDbContext _context;
