@@ -1,14 +1,21 @@
 ﻿@model IEnumerable<Donaciones.Models.BeneficiarioModels>
+
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<h1 class="text-center">Beneficiarios</h1>
+
+<h1 class="text-center">Beneficiario</h1>
 <p>
     <a asp-action="Create" class="btn btn-outline-primary">Nuevo</a>
 </p>
 
-<!-- Tabla de Beneficiarios -->
-<table class="table table-responsive table-bordered table-striped" id="tablaBeneficiarios">
+<!-- Token antifalsificación oculto para POST AJAX -->
+<form method="post" id="tokenForm">
+    @Html.AntiForgeryToken()
+</form>
+
+<!-- Tabla de Beneficiario -->
+<table class="table table-responsive table-bordered table-striped" id="tablaBeneficiario">
     <thead>
         <tr>
             <th>#</th>
@@ -24,36 +31,29 @@
 <!-- Scripts -->
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script>
-    $(document).ready(function() {
-        obtenerBeneficiarios();
+    $(document).ready(function () {
+        obtenerBeneficiario();
     });
 
-    function obtenerBeneficiarios() {
-        // Mostrar mensaje de carga
-        $("#tablaBeneficiarios tbody").html('<tr><td colspan="3" class="text-center">Cargando datos...</td></tr>');
+    function obtenerBeneficiario() {
+        $("#tablaBeneficiario tbody").html('<tr><td colspan="3" class="text-center">Cargando datos...</td></tr>');
 
-        // Realizar la solicitud AJAX al controlador
         $.ajax({
-            url: '/Beneficiarios/ObtenerBeneficiarios', // Asegúrate de que esta ruta existe en tu controlador
+            url: '/Beneficiario/ObtenerBeneficiario',
             type: 'GET',
             dataType: 'json',
-            success: function(data) {
-                console.log("Datos recibidos:", data); // Para depuración
+            success: function (data) {
                 mostrarBeneficiariosEnTabla(data);
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 console.error("Error en la solicitud AJAX:", error);
-                console.error("Estado HTTP:", xhr.status);
-                console.error("Respuesta:", xhr.responseText);
-
-                $("#tablaBeneficiarios tbody").html(
+                $("#tablaBeneficiario tbody").html(
                     '<tr><td colspan="3" class="text-center text-danger">' +
                     'Error al cargar los datos. Detalles en la consola.' +
                     '</td></tr>'
                 );
 
-                // Como plan B, mostrar los datos del modelo inicial si están disponibles
-                if ($("#tablaBeneficiarios tbody tr").length <= 1) {
+                if ($("#tablaBeneficiario tbody tr").length <= 1) {
                     mostrarDatosIniciales();
                 }
             }
@@ -64,26 +64,45 @@
         var html = '';
 
         if (beneficiarios && beneficiarios.length > 0) {
-            $.each(beneficiarios, function(index, item) {
+            $.each(beneficiarios, function (index, item) {
                 html += '<tr>';
                 html += '<td>' + (index + 1) + '</td>';
-                html += '<td>' + item.nombre + '</td>'; // Asegúrate de que la propiedad sea 'nombre' (minúscula)
+                html += '<td>' + item.nombre + '</td>';
                 html += '<td>';
-                html += '<a class="btn btn-outline-warning" href="/Beneficiarios/Edit/' + item.beneficiarioId + '">Editar</a> | ';
-                html += '<a class="btn btn-outline-info" href="/Beneficiarios/Details/' + item.beneficiarioId + '">Detalles</a> | ';
-                html += '<a class="btn btn-outline-danger" href="/Beneficiarios/Delete/' + item.beneficiarioId + '">Eliminar</a>';
+                html += '<a class="btn btn-outline-warning" href="/Beneficiario/Edit/' + item.beneficiarioId + '">Editar</a> | ';
+                html += '<a class="btn btn-outline-info" href="/Beneficiario/Details/' + item.beneficiarioId + '">Detalles</a> | ';
+                html += '<button class="btn btn-outline-danger" onclick="eliminarBeneficiario(' + item.beneficiarioId + ')">Eliminar</button>';
                 html += '</td>';
                 html += '</tr>';
             });
         } else {
-            html = '<tr><td colspan="3" class="text-center">No hay beneficiarios disponibles</td></tr>';
+            html = '<tr><td colspan="3" class="text-center">No hay Beneficiarios disponibles</td></tr>';
         }
 
-        $("#tablaBeneficiarios tbody").html(html);
+        $("#tablaBeneficiario tbody").html(html);
+    }
+
+    function eliminarBeneficiario(id) {
+        if (confirm("¿Estás seguro de que deseas eliminar este beneficiario?")) {
+            $.ajax({
+                url: '/Beneficiario/DeleteConfirmedAjax/' + id, // Asegúrate de que este endpoint existe
+                type: 'POST',
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function () {
+                    alert("Beneficiario eliminado correctamente.");
+                    obtenerBeneficiario();
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error al eliminar:", error);
+                    alert("Ocurrió un error al intentar eliminar el beneficiario.");
+                }
+            });
+        }
     }
 
     function mostrarDatosIniciales() {
-        // Esta función crea el HTML para los datos del modelo inicial
         var datos = [];
     @foreach (var item in Model)
     {
@@ -94,22 +113,20 @@
         @:});
     }
 
-        console.log("Usando datos iniciales:", datos);
-
         if (datos.length > 0) {
             var html = '';
-            $.each(datos, function(i, item) {
+            $.each(datos, function (i, item) {
                 html += '<tr>';
                 html += '<td>' + (item.index + 1) + '</td>';
                 html += '<td>' + item.nombre + '</td>';
                 html += '<td>';
-                html += '<a class="btn btn-outline-warning" href="/Beneficiarios/Edit/' + item.beneficiarioId + '">Editar</a> | ';
-                html += '<a class="btn btn-outline-info" href="/Beneficiarios/Details/' + item.beneficiarioId + '">Detalles</a> | ';
-                html += '<a class="btn btn-outline-danger" href="/Beneficiarios/Delete/' + item.beneficiarioId + '">Eliminar</a>';
+                html += '<a class="btn btn-outline-warning" href="/Beneficiario/Edit/' + item.beneficiarioId + '">Editar</a> | ';
+                html += '<a class="btn btn-outline-info" href="/Beneficiario/Details/' + item.beneficiarioId + '">Detalles</a> | ';
+                html += '<button class="btn btn-outline-danger" onclick="eliminarBeneficiario(' + item.beneficiarioId + ')">Eliminar</button>';
                 html += '</td>';
                 html += '</tr>';
             });
-            $("#tablaBeneficiarios tbody").html(html);
+            $("#tablaBeneficiario tbody").html(html);
         }
     }
 </script>

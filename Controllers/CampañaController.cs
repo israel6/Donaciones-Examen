@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Donaciones.Controllers
 {
     [Authorize(Roles = "Administrador,Donante")]
+
     public class CampañaController : Controller
     
     {

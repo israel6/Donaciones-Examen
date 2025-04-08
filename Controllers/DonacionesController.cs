@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Donaciones.Controllers
 {
+    [Authorize(Roles = "Administrador,Beneficiario,Donante")]
     public class DonacionesController : Controller
     {
         private readonly ApplicationDbContext _context;

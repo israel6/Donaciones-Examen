@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Donaciones.Data;
 using Donaciones.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Donaciones.Controllers
 {
+    [Authorize(Roles = "Administrador,Beneficiario")]
     public class DonanteController : Controller
     {
         private readonly ApplicationDbContext _context;

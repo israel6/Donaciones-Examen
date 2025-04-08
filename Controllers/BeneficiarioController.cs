@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Donaciones.Data;
 using Donaciones.Models;
@@ -11,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Donaciones.Controllers
 {
-    // Cambiar el nombre a BeneficiarioController (plural) para que coincida con las rutas en la vista
+    [Authorize(Roles = "Administrador,Beneficiario,Donante")]
     public class BeneficiarioController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -26,11 +25,7 @@ namespace Donaciones.Controllers
         {
             return View(await _context.Beneficiario.ToListAsync());
         }
-        public JsonResult ObtenerBeneficiarios()
-        {
-            var Beneficiario = _context.Beneficiario.ToList();
-            return Json(Beneficiario);
-        }
+
         // GET: Beneficiario/Details/5
         public async Task<IActionResult> Details(int? id)
         {
@@ -39,40 +34,38 @@ namespace Donaciones.Controllers
                 return NotFound();
             }
 
-            var BeneficiarioModels = await _context.Beneficiario
+            var beneficiario = await _context.Beneficiario
                 .FirstOrDefaultAsync(m => m.BeneficiarioId == id);
-            if (BeneficiarioModels == null)
+
+            if (beneficiario == null)
             {
                 return NotFound();
             }
 
-            return View(BeneficiarioModels);
+            return View(beneficiario);
         }
-        
+
         // GET: Beneficiario/Create
         public IActionResult Create()
         {
-           
-
             return View();
         }
 
         // POST: Beneficiario/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BeneficiarioId,Nombre")] BeneficiarioModels BeneficiarioModels)
+        public async Task<IActionResult> Create([Bind("BeneficiarioId,Nombre")] BeneficiarioModels beneficiario)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(BeneficiarioModels);
+                _context.Add(beneficiario);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(BeneficiarioModels);
+            return View(beneficiario);
         }
-                // GET: Beneficiario/Edit/5
+
+        // GET: Beneficiario/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -80,22 +73,20 @@ namespace Donaciones.Controllers
                 return NotFound();
             }
 
-            var BeneficiarioModels = await _context.Beneficiario.FindAsync(id);
-            if (BeneficiarioModels == null)
+            var beneficiario = await _context.Beneficiario.FindAsync(id);
+            if (beneficiario == null)
             {
                 return NotFound();
             }
-            return View(BeneficiarioModels);
+            return View(beneficiario);
         }
-      
+
         // POST: Beneficiario/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("BeneficiarioId,Nombre")] BeneficiarioModels BeneficiarioModels)
+        public async Task<IActionResult> Edit(int id, [Bind("BeneficiarioId,Nombre")] BeneficiarioModels beneficiario)
         {
-            if (id != BeneficiarioModels.BeneficiarioId)
+            if (id != beneficiario.BeneficiarioId)
             {
                 return NotFound();
             }
@@ -104,12 +95,12 @@ namespace Donaciones.Controllers
             {
                 try
                 {
-                    _context.Update(BeneficiarioModels);
+                    _context.Update(beneficiario);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!BeneficiarioModelsExists(BeneficiarioModels.BeneficiarioId))
+                    if (!BeneficiarioExists(beneficiario.BeneficiarioId))
                     {
                         return NotFound();
                     }
@@ -120,8 +111,9 @@ namespace Donaciones.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(BeneficiarioModels);
+            return View(beneficiario);
         }
+
         // GET: Beneficiario/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
@@ -130,31 +122,74 @@ namespace Donaciones.Controllers
                 return NotFound();
             }
 
-            var BeneficiarioModels = await _context.Beneficiario
+            var beneficiario = await _context.Beneficiario
                 .FirstOrDefaultAsync(m => m.BeneficiarioId == id);
-            if (BeneficiarioModels == null)
+
+            if (beneficiario == null)
             {
                 return NotFound();
             }
 
-            return View(BeneficiarioModels);
+            return View(beneficiario);
         }
-               // POST: Beneficiario/Delete/5
-       [HttpPost, ActionName("Delete")]
+
+        // POST: Beneficiario/Delete/5
+        [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var BeneficiarioModels = await _context.Beneficiario.FindAsync(id);
-            if (BeneficiarioModels != null)
+            var beneficiario = await _context.Beneficiario.FindAsync(id);
+            if (beneficiario != null)
             {
-                _context.Beneficiario.Remove(BeneficiarioModels);
-            }
+                // Verificar si existen Donaciones asociadas a este Beneficiario
+                var donacionesAsociadas = await _context.Donaciones.Where(d => d.BeneficiarioId == id).ToListAsync();
 
-            await _context.SaveChangesAsync();
+                if (donacionesAsociadas.Any())
+                {
+                    // Si existen donaciones asociadas, no permitir la eliminación y mostrar un mensaje
+                    // Puedes redirigir a una página de error o mostrar un mensaje en la vista Index
+                    TempData["ErrorMessage"] = "No se puede eliminar el beneficiario porque existen donaciones asociadas.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                _context.Beneficiario.Remove(beneficiario);
+                await _context.SaveChangesAsync();
+            }
             return RedirectToAction(nameof(Index));
         }
 
-        private bool BeneficiarioModelsExists(int id)
+        // Método para responder a la solicitud AJAX (sin correcciones necesarias en la lógica principal)
+        public JsonResult ObtenerBeneficiario()
+        {
+            var beneficiarios = _context.Beneficiario.ToList();
+            return Json(beneficiarios);
+        }
+
+        // POST: Beneficiario/DeleteConfirmedAjax/5 (para AJAX)
+        [HttpPost]
+        public async Task<IActionResult> DeleteConfirmedAjax(int id)
+        {
+            var beneficiario = await _context.Beneficiario.FindAsync(id);
+            if (beneficiario == null)
+            {
+                return Json(new { success = false, message = "Beneficiario no encontrado" });
+            }
+
+            // Verificar si existen Donaciones asociadas a este Beneficiario
+            var donacionesAsociadas = await _context.Donaciones.Where(d => d.BeneficiarioId == id).ToListAsync();
+
+            if (donacionesAsociadas.Any())
+            {
+                return Json(new { success = false, message = "No se puede eliminar el beneficiario porque existen donaciones asociadas." });
+            }
+
+            _context.Beneficiario.Remove(beneficiario);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Beneficiario eliminado correctamente" });
+        }
+
+        private bool BeneficiarioExists(int id)
         {
             return _context.Beneficiario.Any(e => e.BeneficiarioId == id);
         }
